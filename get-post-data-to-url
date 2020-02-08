@@ -1,0 +1,141 @@
+index.html
+===================
+<form method="post" action="form.pl">
+	<input type="hidden" name="key" value="52260706a001fd1a4aff4bc51c7a2dd6" />
+	<label>PNTN</label><input type="text" value="25251490" name="pntn" /> <br />
+    <label>branchcode</label><input type="text" value="BR25251490496" name="branchcode" /> <br />
+    <label>invoice_number</label><input type="text" value="12" name="invoice_number" /> <br />
+    <label>invoice_date</label><input type="text" value="2016-06-13" name="invoice_date" /> <br />
+    <label>invoice_time</label><input type="text" value="12:03" name="invoice_time" /> <br />
+    <label>discount_percent</label><input type="text" value="0" name="discount_percent" /> <br />
+    <label>service_charges_percent</label><input type="text" value="0" name="service_charges_percent" /> <br />
+    <label>table_no</label><input type="text" value="9" name="table_no" /> <br />
+    <br /><br />
+    
+    <input type="submit" value="Save"  />
+    
+</form>	
+
+
+form.pl
+==================
+
+
+
+#!"c:\xampp\perl\bin\perl.exe"
+
+use strict;
+use warnings;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+
+
+#  SANI: Get Response from URL
+
+use LWP::Simple;                # From CPAN
+use JSON qw( decode_json );     # From CPAN
+use Data::Dumper;               # Perl core module
+use strict;                     # Good practice
+use warnings;                   # Good practice
+
+use LWP::UserAgent;
+
+
+
+sub output_top($);
+sub output_end($);
+sub display_results($);
+sub output_form($);
+
+my $q = new CGI;
+
+print $q->header();
+
+# Output stylesheet, heading etc
+output_top($q);
+
+if ($q->param()) {
+    # Parameters are defined, therefore the form has been submitted
+    display_results($q);
+} else {
+    # We're here for the first time, display the form
+    output_form($q);
+}
+
+# Output footer and end html
+output_end($q);
+
+exit 0;
+
+# Outputs the start html tag, stylesheet and heading
+sub output_top($) {
+    my ($q) = @_;
+    print $q->start_html(
+        -title => 'Perl Example By SANI HYNE',
+        -bgcolor => 'white');
+}
+
+# Outputs a footer line and end html tags
+sub output_end($) {
+    my ($q) = @_;
+    print $q->div("Sani Hyne");
+    print $q->end_html;
+}
+
+# Displays the results of the form
+sub display_results($) 
+{
+    my ($q) = @_;
+
+    #/////////////////////////////////////////////////
+    #
+    #              GETTING FORM VALUES
+    #
+    #                                   By: SANI HYNE
+    #////////////////////////////////////////////////
+    
+    my $pntn = $q->param('pntn');
+    my $branchcode = $q->param('branchcode');
+    my $invoice_number = $q->param('invoice_number');
+    my $invoice_date = $q->param('invoice_date');
+    my $invoice_time = $q->param('invoice_time');
+    my $discount_percent = $q->param('discount_percent');
+    my $service_charges_percent = $q->param('service_charges_percent');
+    my $table_no = $q->param('table_no');
+    
+    #/////////////////////////////////////////////////
+    #
+    #              GETTING FORM KEY
+    #
+    #                                   By: SANI HYNE
+    #////////////////////////////////////////////////
+    
+        my $trendsurl = "http://rims.punjab.gov.pk/api/databaseupdate/formkey";
+	my $json = get( $trendsurl );
+	die "Could not get $trendsurl!" unless defined $json;
+	my $decoded_json = decode_json( $json );
+	# print Dumper $decoded_json;
+
+	# Access the shares like this:
+	my $keyOfDay = $decoded_json->{'key'};
+	
+    #/////////////////////////////////////////////////
+    #
+    #              POSTING DATA ON RIMS SERVER
+    #
+    #                                   By: SANI HYNE
+    #////////////////////////////////////////////////
+    
+	my $ua = new LWP::UserAgent;
+
+	my $response
+	= $ua->post('http://rims.punjab.gov.pk/api/databaseupdate/formdata',
+	{ key => $keyOfDay,
+	data => '{"pntn":"'.$pntn.'","branchcode":"'.$branchcode.'","invoice_number":"'.$invoice_number.'","invoice_date": "'.$invoice_date.'","invoice_time": "'.$invoice_time.'","discount_percent": "'.$discount_percent.'","service_charges_percent": "'.$service_charges_percent.'","tax_percent":"16","table_no": "'.$table_no.'","phone": "042456456","customer_name": "Sani","detail":[{"item_code":"34",                "item":"Piza", "quantity":"1","unit_price":"725"}, {"item_code":"23", "item":"Korma", "quantity":"12", "unit_price":"185"}]}',
+	});
+
+	my $content = $response->content; 
+	print $content;
+
+    
+}
